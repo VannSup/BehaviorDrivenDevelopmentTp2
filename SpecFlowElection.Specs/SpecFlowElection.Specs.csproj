@@ -28,4 +28,8 @@
     <Folder Include="Hooks\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\BehaviorDrivenDevelopmentTp2\BehaviorDrivenDevelopmentTp2.csproj" />
+  </ItemGroup>
+
 </Project>
