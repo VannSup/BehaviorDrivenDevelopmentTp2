@@ -1,100 +1,126 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace BehaviorDrivenDevelopmentTp2
 {
     public class Election
     {
-        private readonly Scrutin _scrutin1 = new Scrutin();
+        private List<Scrutin> Scrutins { get; set; }
 
-        private readonly Scrutin _scrutin2 = new Scrutin();
+        public List<string> CandidatsName { get; set; }
 
-        public List<Candidat> Candidats { get; set; }
+        public int CurrentScrutinIndex { get; set; }
 
         public Election()
         {
-            Candidats = new List<Candidat>();
+            CandidatsName = new List<string>();
+
+            Scrutins = new List<Scrutin>() {
+                new Scrutin()
+            };
+            CurrentScrutinIndex = 0;
         }
 
-        public void StartScrutinUn()
+        public string StartScrutin()
         {
-            _scrutin1.Start();
-            _scrutin1.Candidats.AddRange(Candidats);
+            if (Scrutins.Count == 2)
+            {
+                if (Scrutins[1]?.GetStatus() == true)
+                    return "Pas plus de deux tours possible";
+            }
+
+            Scrutins[CurrentScrutinIndex].Start();
+
+            CandidatsName.ForEach(candidatName =>
+            {
+                Scrutins[CurrentScrutinIndex].Candidats.Add(new Candidat(candidatName));
+            });
+
+            return "";
         }
 
-        public void StartScrutinDeux()
+        public string StopScrutin()
         {
-            _scrutin2.Start();
-            _scrutin2.Candidats.AddRange(Candidats);
+            Scrutins[CurrentScrutinIndex].Stop();
+            string resultOfScrutin = GetWin();
+            if (resultOfScrutin == "Pas de vainqueur" && CurrentScrutinIndex == 0)
+            {
+                var candidatsOrderDescendingByNbVote = Scrutins[CurrentScrutinIndex].GetCandidatsOrderDescendingByNbVote();
+
+                var allCandidatWithSameVote = Scrutins[CurrentScrutinIndex].FindAllCandidatsByNbVote(candidatsOrderDescendingByNbVote[1].NbVote);
+
+                //On modifie la liste des candidat pour le deuxieme tours
+                CandidatsName = new List<string>() {
+                    candidatsOrderDescendingByNbVote[0].Name
+                };
+                allCandidatWithSameVote.ForEach(c => 
+                { 
+                    CandidatsName.Add(c.Name); 
+                });
+
+                CurrentScrutinIndex++;
+
+                Scrutins.Add(new Scrutin());
+            }
+
+            return resultOfScrutin;
         }
 
-        public void StopScrutinUn()
-        {
-            _scrutin1.Stop();
-            if (GetWin() == "Pas de vainqueur")
-                StartScrutinDeux();
-        }
-
-        public void StopScrutinDeux()
-        {
-            _scrutin2.Stop();
-        }
 
         #region Get
         public string GetWin()
         {
-            if (_scrutin1.GetStatus() == true)
+            if (Scrutins[CurrentScrutinIndex].GetStatus() == true)
             {
-                 var firstCandidat = _scrutin1.GetCandidatWithMaxVote();
+
+                var candidatsOrderDescendingByNbVote = Scrutins[CurrentScrutinIndex].GetCandidatsOrderDescendingByNbVote();
+
                 //On verifie si le candidat avec le meileur scores a + de 50% de votes
-                if ((firstCandidat.NbVote) > (_scrutin1.GetNbparticipant() / 2))
-                    return firstCandidat.Name;
+                if ((candidatsOrderDescendingByNbVote[0].NbVote) > (Scrutins[CurrentScrutinIndex].GetNbparticipant() / 2))
+                    return candidatsOrderDescendingByNbVote[0].Name;
+
+                // Si on est au deuxieme tour alors le premiere est vainqueur
+                else if (CurrentScrutinIndex == 1)
+                    if (candidatsOrderDescendingByNbVote[0].NbVote == candidatsOrderDescendingByNbVote[1].NbVote)
+                        return "Pas de vainqueur";
+                    else
+                        return candidatsOrderDescendingByNbVote[0].Name;
+
                 else
                     return "Pas de vainqueur";
             }
-            else 
-            {
+            else
                 return "Le scrutin n'est pas fini, pas de vainqueur.";
-            }
-                
+
+        }
+
+        public string GetInfoByCandidatNameAndScrutinIndex(string name, int index)
+        {
+            string result = "";
+
+            result += Scrutins[index].GetNbVoteResultByCandidat(name) + " ";
+            result += Scrutins[index].GetPourcentageResultByCandidat(name);
+
+            return result;
         }
         #endregion
 
         #region Vote
         public string VoteFor(string name = Constants.VOTE_BLANC)
         {
-            switch (_scrutin1.GetStatus())
+            switch (Scrutins[CurrentScrutinIndex].GetStatus())
             {
                 // En cours
                 case false:
-                    _scrutin1.VoteFor(name);
-                    return $"Vote pour {name} au tour 1";
+                    Scrutins[CurrentScrutinIndex].VoteFor(name);
+                    return $"Vote pour {name} au tour {CurrentScrutinIndex}";
 
                 // Terminée
                 case true:
-                    return VoteForSecondTours(name);
+                    return "Le scrutin est cloturée";
 
                 // Pas commencé
                 default:
                     return "Les élections n'ont pas commencer";
-            }
-        }
-        private string VoteForSecondTours(string name)
-        {
-            switch (_scrutin2.GetStatus())
-            {
-                // En cours
-                case false:
-                    _scrutin2.VoteFor(name);
-                    return $"Vote pour {name} au tour 2";
-
-                // Terminée
-                case true:
-                    return "Le scrutin est clôturé";
-
-                // Pas commencé
-                default:
-                    return "Le deuxième tour des élections n'a pas commencé";
             }
         }
         #endregion

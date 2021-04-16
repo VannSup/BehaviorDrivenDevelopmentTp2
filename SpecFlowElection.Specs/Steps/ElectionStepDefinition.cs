@@ -27,29 +27,13 @@ namespace SpecFlowElection.Specs.Steps
         {
             foreach (TableRow row in table.Rows)
             {
-                _election.Candidats.Add(new Candidat(row["Name"]));
+                _election.CandidatsName.Add(row["Name"]);
             }
         }
 
-        [Given("Les differents vote par candidats tour 1")]
+        [Given("Les differents vote par candidats")]
         public void GivenLesDifferentsVoteParCandidatsUn(Table table)
         {
-            _election.StartScrutinUn();
-            foreach (TableRow row in table.Rows)
-            {
-                int nbVote = int.Parse(row["VoteNumbers"]);
-                string name = row["Name"];
-                for (int i = 0; i < nbVote; i++)
-                {
-                    _election.VoteFor(name);
-                }
-            }
-        }
-
-        [Given("Les differents vote par candidats tour 2")]
-        public void GivenLesDifferentsVoteParCandidatsDeux(Table table)
-        {
-            _election.StartScrutinUn();
             foreach (TableRow row in table.Rows)
             {
                 int nbVote = int.Parse(row["VoteNumbers"]);
@@ -63,17 +47,31 @@ namespace SpecFlowElection.Specs.Steps
         #endregion
 
         #region When
-        [When("Cloture scrutin 1")]
-        public void WhenClotureScrutinUn()
+        [When("Ouvrir scrutin")]
+        public void WhenOuvrirScrutin()
         {
-            _election.StopScrutinUn();
+            var result =_election.StartScrutin();
+            if (!string.IsNullOrEmpty(result))
+                _result = result;
         }
 
-        [When("Cloture scrutin 2")]
-        public void WhenClotureScrutinDeux()
+        [When("Cloture scrutin")]
+        public void WhenClotureScrutin()
         {
-            _election.StopScrutinDeux();
+            _election.StopScrutin();
         }
+
+        [When("Consultation des scrutin")]
+        public void WhenConsultationDesScrutin(Table table)
+        {
+            foreach (TableRow row in table.Rows)
+            {
+                int nbVote = int.Parse(row["TourId"]);
+                string name = row["Name"];
+                _result += _election.GetInfoByCandidatNameAndScrutinIndex(name, 0);
+            }
+        }
+
 
         [When("Recherche du vainqueur")]
         public void WhenRechercheDuVainqueur()

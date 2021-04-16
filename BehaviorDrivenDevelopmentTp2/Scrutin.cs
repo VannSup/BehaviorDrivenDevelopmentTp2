@@ -46,28 +46,21 @@ namespace BehaviorDrivenDevelopmentTp2
             int result = 0;
 
             Candidats.ForEach(
-                candidat => {
+                candidat =>
+                {
                     result += candidat.NbVote;
                 }
             );
             return result;
         }
 
-        public Candidat GetCandidatWithMaxVote()
+        public List<Candidat> GetCandidatsOrderDescendingByNbVote()
         {
-            int max = 0;
-            Candidat result = null;
-            Candidats.ForEach(c =>
-                {
-                    if(c.NbVote > max)
-                    {
-                        result = c;
-                        max = c.NbVote;
-                    }
-                }
-            );
-            return result;
-
+            //On trie du plus petit nombre de vote au plus grand
+            Candidats.Sort();
+            //On retourne la liste pour avoir en premiers les meilleur
+            Candidats.Reverse();
+            return Candidats;
         }
 
         #region Pourcentage
@@ -75,18 +68,28 @@ namespace BehaviorDrivenDevelopmentTp2
         {
             string result = "";
 
-            Candidats.ForEach(
-                candidat => {
-                    result += GetPourcentageResultByCandidat(candidat.Name) + '\n';
-                }
-            );
+            if (IsFinish != true)
+                result += "Pas encore clôturé : ";
+
+            Candidats.ForEach(candidat =>
+            {
+                float pourcentage = ((float)candidat.NbVote / (float)GetNbparticipant()) * 100;
+                result += $"    {candidat.Name} : {pourcentage}%.";
+            });
+
             return result;
         }
 
         public string GetPourcentageResultByCandidat(string name)
         {
-            float result = ((float)FindByName(name).NbVote / (float)GetNbparticipant())*100;
-            return $"{name} : {result}";
+            string result = "";
+
+            if (IsFinish != true)
+                result += "Pas encore clôturé : ";
+
+            float pourcentage = ((float)FindByName(name).NbVote / (float)GetNbparticipant()) * 100;
+            result += $"{name} : {pourcentage}%.";
+            return result;
         }
         #endregion
 
@@ -95,17 +98,27 @@ namespace BehaviorDrivenDevelopmentTp2
         {
             string result = "";
 
-            Candidats.ForEach(
-                candidat => {
-                    result += GetNbVoteResultByCandidat(candidat.Name) + '\n';
-                }
-            );
+            if (IsFinish != true)
+                result += "Pas encore clôturé : ";
+
+            Candidats.ForEach(candidat =>
+            {
+                result += $"{candidat.Name} : {candidat.NbVote} voix.";
+            });
+
             return result;
         }
 
         public string GetNbVoteResultByCandidat(string name)
         {
-            return $"{name} : {FindByName(name).NbVote}";
+            string result = "";
+
+            if (IsFinish != true)
+                result += "Pas encore clôturé : ";
+
+            result += $"{name} : {FindByName(name).NbVote} voix.";
+
+            return result;
         }
         #endregion
 
@@ -117,6 +130,11 @@ namespace BehaviorDrivenDevelopmentTp2
         public Candidat FindByName(string name)
         {
             return Candidats.Find(candidat => candidat.Name == name);
+        }
+
+        public List<Candidat> FindAllCandidatsByNbVote(int NbVote)
+        {
+            return Candidats.FindAll(candidat => candidat.NbVote == NbVote);
         }
     }
 }
